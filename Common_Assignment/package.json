@@ -1,0 +1,12 @@
+{
+  "name": "scopelab",
+  "version": "1.0.0",
+  "description": "ScopeLab - Intelligent Semantic Analyzer for Compiler Design",
+  "type": "module",
+  "scripts": {
+    "test": "node test/test_compiler.js"
+  },
+  "keywords": ["compiler", "semantic-analysis", "symbol-table", "scope-tree"],
+  "author": "ScopeLab",
+  "license": "MIT"
+}

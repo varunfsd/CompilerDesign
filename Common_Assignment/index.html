@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScopeLab – Intelligent Semantic Analyzer</title>
+    <meta name="description" content="An educational Compiler Design developer tool for nested scopes, symbol tables, lexical resolution, and semantic error recovery.">
+    <!-- Google Fonts for JetBrains Mono and Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Technical Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="brand-title">
+                    <span class="logo-mark">&lt;/&gt;</span>
+                    <span class="brand-name">ScopeLab</span>
+                </div>
+                <span class="brand-divider">/</span>
+                <span class="brand-subtitle">Interactive Semantic Analyzer</span>
+            </div>
+            <div class="header-right">
+                <span class="header-tag">Compiler Design • Educational Tool</span>
+            </div>
+        </header>
+
+        <!-- Compact Metrics Dashboard Strip -->
+        <div class="dashboard-strip">
+            <div class="stat-group">
+                <div class="stat-item">
+                    <span class="stat-label">TOKENS</span>
+                    <span class="stat-val font-mono" id="stat-tokens">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">SCOPES</span>
+                    <span class="stat-val font-mono" id="stat-scopes">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">SYMBOLS</span>
+                    <span class="stat-val font-mono" id="stat-symbols">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">ERRORS</span>
+                    <span class="stat-val font-mono text-error" id="stat-errors">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">WARNINGS</span>
+                    <span class="stat-val font-mono text-warning" id="stat-warnings">0</span>
+                </div>
+            </div>
+            <div class="status-indicator-area" id="analysis-status">
+                <span class="badge badge-neutral">Ready to analyze</span>
+            </div>
+        </div>
+
+        <!-- Main Split Workspace -->
+        <main class="main-layout">
+            <!-- Left Pane: Source Code Editor -->
+            <section class="editor-pane">
+                <div class="pane-header">
+                    <div class="pane-title-group">
+                        <span class="pane-title">SOURCE CODE</span>
+                        <span class="pane-shortcut">Ctrl+Enter to Analyze</span>
+                    </div>
+                    <div class="preset-selector-wrap">
+                        <label for="preset-select" class="sr-only">Select Preset</label>
+                        <select id="preset-select" class="form-select select-sm font-mono" title="Load predefined test case">
+                            <!-- Populated via JavaScript -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Code Editor Container -->
+                <div class="editor-wrapper">
+                    <div class="line-numbers font-mono" id="line-numbers"></div>
+                    <textarea 
+                        id="source-editor" 
+                        class="source-textarea font-mono" 
+                        spellcheck="false" 
+                        autocapitalize="off" 
+                        autocomplete="off"
+                        placeholder="Type C-like program here..."></textarea>
+                </div>
+
+                <!-- Editor Action Toolbar -->
+                <div class="editor-toolbar">
+                    <button id="btn-analyze" class="btn btn-primary">
+                        <span class="btn-icon">▶</span> Analyze Code
+                    </button>
+                    <button id="btn-reset" class="btn btn-secondary" title="Reload original preset code">
+                        ↻ Reset Example
+                    </button>
+                    <button id="btn-clear" class="btn btn-ghost" title="Clear editor content">
+                        ✕ Clear
+                    </button>
+                </div>
+            </section>
+
+            <!-- Right Pane: Tabbed Analysis Workbench -->
+            <section class="analysis-pane">
+                <!-- Navigation Tabs -->
+                <div class="tabs-nav-bar">
+                    <button class="tab-btn active" data-tab="overview">Overview</button>
+                    <button class="tab-btn" data-tab="symbols">Symbol Table</button>
+                    <button class="tab-btn" data-tab="scopes">Scope Hierarchy</button>
+                    <button class="tab-btn" data-tab="resolution">Explain Resolution</button>
+                    <button class="tab-btn" data-tab="tokens">Tokens</button>
+                    <button class="tab-btn" data-tab="diagnostics">Diagnostics</button>
+                    <button class="tab-btn" data-tab="viva">Viva & Theory</button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="tab-content-area">
+                    <!-- Tab 1: Overview -->
+                    <div class="tab-pane active" id="tab-overview">
+                        <div id="overview-content"></div>
+                    </div>
+
+                    <!-- Tab 2: Symbol Table -->
+                    <div class="tab-pane" id="tab-symbols">
+                        <div class="pane-sub-header">
+                            <div class="sub-title">Symbol Table Entries</div>
+                            <div class="filter-controls">
+                                <label for="scope-filter-select" class="text-sm text-muted">Scope Filter:</label>
+                                <select id="scope-filter-select" class="form-select select-xs font-mono"></select>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Scope</th>
+                                        <th class="text-center">Level</th>
+                                        <th>Memory Address</th>
+                                        <th class="text-center">Parameter</th>
+                                        <th>Decl Line:Col</th>
+                                        <th class="text-center">References</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="symbol-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Scope Hierarchy -->
+                    <div class="tab-pane" id="tab-scopes">
+                        <div class="scope-view-split">
+                            <div class="scope-tree-column">
+                                <div class="sub-title mb-8">Scope Tree Structure</div>
+                                <p class="text-xs text-muted mb-12">Click any scope node to inspect accessible variables and bounds.</p>
+                                <div id="scope-hierarchy-container" class="scope-hierarchy-box"></div>
+                            </div>
+                            <div class="scope-detail-column">
+                                <div id="scope-detail-panel"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 4: Explain Resolution -->
+                    <div class="tab-pane" id="tab-resolution">
+                        <div class="pane-sub-header">
+                            <div class="sub-title">Interactive Lexical Scope Resolution Trace</div>
+                            <div class="filter-controls">
+                                <label for="resolution-select" class="text-sm text-muted">Select Identifier:</label>
+                                <select id="resolution-select" class="form-select select-xs font-mono"></select>
+                            </div>
+                        </div>
+                        <div id="resolution-flow-container"></div>
+                    </div>
+
+                    <!-- Tab 5: Tokens -->
+                    <div class="tab-pane" id="tab-tokens">
+                        <div class="pane-sub-header">
+                            <div class="sub-title">Lexical Token Stream</div>
+                            <div class="filter-controls">
+                                <input type="text" id="token-filter-input" class="form-input input-xs font-mono" placeholder="Filter tokens (e.g. identifier, int)...">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center" style="width: 50px;">#</th>
+                                        <th>Token Type</th>
+                                        <th>Lexeme</th>
+                                        <th>Line:Col</th>
+                                        <th>Category</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="token-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab 6: Diagnostics & Recovery -->
+                    <div class="tab-pane" id="tab-diagnostics">
+                        <div class="diag-view-split">
+                            <div class="diag-column">
+                                <div class="sub-title mb-12">Semantic & Scope Diagnostics</div>
+                                <div id="diagnostics-list"></div>
+                            </div>
+                            <div class="recovery-column">
+                                <div class="sub-title mb-12">Compiler Recovery Actions</div>
+                                <div id="recovery-list"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 7: Viva & Theory -->
+                    <div class="tab-pane" id="tab-viva">
+                        <div id="explanation-content"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modular Application Scripts -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
