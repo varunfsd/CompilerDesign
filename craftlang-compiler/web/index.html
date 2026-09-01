@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Craft of Compilers: Transforming Source Code into Machine Action</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Mermaid.js for interactive diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+</head>
+<body class="theme-dark">
+    <!-- Main Top Navigation -->
+    <header class="navbar">
+        <div class="brand">
+            <div class="brand-icon">⚡</div>
+            <div class="brand-text">
+                <h1 class="brand-title">The Craft of Compilers</h1>
+                <span class="brand-subtitle">CraftLang &bull; Source Code to Machine Action</span>
+            </div>
+        </div>
+
+        <div class="nav-controls">
+            <div class="sample-selector-wrapper">
+                <label for="exampleSelect" class="selector-label">Preset Example:</label>
+                <select id="exampleSelect" class="custom-select" title="Choose a pre-built CraftLang example">
+                    <option value="" disabled selected>Loading examples...</option>
+                </select>
+            </div>
+
+            <div class="action-buttons">
+                <button id="btnCompile" class="btn btn-primary" title="Compile through all stages">
+                    <span class="btn-icon">⚡</span> Compile
+                </button>
+                <button id="btnRun" class="btn btn-success" title="Compile & Run in Virtual Machine">
+                    <span class="btn-icon">▶</span> Run Program
+                </button>
+                <button id="btnClear" class="btn btn-secondary" title="Clear editor and results">
+                    <span class="btn-icon">🧹</span> Clear
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="workbench-container">
+        <!-- Left Panel: Source Code Editor -->
+        <section class="panel editor-panel">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span class="panel-icon">📝</span>
+                    <h2 class="panel-title">Source Code (CraftLang)</h2>
+                </div>
+                <div class="panel-actions">
+                    <span id="cursorPosition" class="editor-status">Ln 1, Col 1</span>
+                    <button id="btnFormat" class="icon-button" title="Quick Format / Indent">📐</button>
+                </div>
+            </div>
+
+            <div class="editor-wrapper">
+                <div id="lineNumbers" class="line-numbers">1</div>
+                <textarea id="codeEditor" class="code-textarea" spellcheck="false" placeholder="// Enter your CraftLang source code here...&#10;let x: int = 42;&#10;print(x);"></textarea>
+            </div>
+
+            <!-- Diagnostics Bar / Error Banner -->
+            <div id="diagnosticsBar" class="diagnostics-bar hidden">
+                <div class="diag-header">
+                    <span id="diagSeverityBadge" class="badge badge-error">ERROR</span>
+                    <span id="diagStage" class="diag-stage">Stage</span>
+                    <span id="diagLocation" class="diag-location">Line 1, Col 1</span>
+                </div>
+                <pre id="diagMessage" class="diag-message"></pre>
+            </div>
+        </section>
+
+        <!-- Right Panel: Multi-Stage Compiler Studio -->
+        <section class="panel stages-panel">
+            <!-- Stage Tabs Navigation -->
+            <div class="tabs-header">
+                <button class="tab-btn active" data-tab="tab-tokens" id="tabBtnTokens">
+                    <span class="tab-badge">1</span> Tokens
+                </button>
+                <button class="tab-btn" data-tab="tab-ast" id="tabBtnAST">
+                    <span class="tab-badge">2</span> AST Tree
+                </button>
+                <button class="tab-btn" data-tab="tab-symbols" id="tabBtnSymbols">
+                    <span class="tab-badge">3</span> Symbol Table
+                </button>
+                <button class="tab-btn" data-tab="tab-tac" id="tabBtnTAC">
+                    <span class="tab-badge">4</span> Three-Address Code
+                </button>
+                <button class="tab-btn" data-tab="tab-optimizations" id="tabBtnOptimizations">
+                    <span class="tab-badge">5</span> Optimizations
+                </button>
+                <button class="tab-btn" data-tab="tab-codegen" id="tabBtnCodeGen">
+                    <span class="tab-badge">6</span> LLVM / Assembly
+                </button>
+                <button class="tab-btn" data-tab="tab-console" id="tabBtnConsole">
+                    <span class="tab-badge">7</span> Console Output
+                </button>
+            </div>
+
+            <!-- Stage Tab Contents -->
+            <div class="tabs-content">
+                <!-- Tab 1: Tokens -->
+                <div id="tab-tokens" class="tab-pane active">
+                    <div class="pane-toolbar">
+                        <span class="pane-stats" id="tokenCountLabel">0 Tokens generated</span>
+                        <input type="text" id="tokenFilterInput" class="filter-input" placeholder="Filter tokens (e.g. IDENTIFIER, INT_LIT)...">
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="tokensTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Token Type</th>
+                                    <th>Lexeme / Value</th>
+                                    <th>Line</th>
+                                    <th>Col</th>
+                                    <th>Length</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tokensTableBody">
+                                <tr><td colspan="6" class="table-empty">Compile code to inspect generated tokens</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 2: AST Tree -->
+                <div id="tab-ast" class="tab-pane">
+                    <div class="pane-toolbar">
+                        <div class="ast-view-toggles">
+                            <button id="btnAstDiagramView" class="btn btn-sm btn-active">Visual Diagram</button>
+                            <button id="btnAstJsonView" class="btn btn-sm">JSON Structure</button>
+                        </div>
+                        <button id="btnResetAstZoom" class="btn btn-sm btn-secondary">Reset View</button>
+                    </div>
+                    <div id="astDiagramContainer" class="ast-diagram-wrapper">
+                        <div id="astMermaidOutput" class="mermaid-target">Compile code to generate Abstract Syntax Tree</div>
+                    </div>
+                    <div id="astJsonContainer" class="ast-json-wrapper hidden">
+                        <pre id="astJsonOutput" class="json-code-block"></pre>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Symbol Table -->
+                <div id="tab-symbols" class="tab-pane">
+                    <div class="pane-toolbar">
+                        <span class="pane-stats" id="symbolCountLabel">0 Scoped Symbols</span>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="symbolsTable">
+                            <thead>
+                                <tr>
+                                    <th>Identifier</th>
+                                    <th>Category</th>
+                                    <th>Type</th>
+                                    <th>Scope Name</th>
+                                    <th>Scope Level</th>
+                                    <th>Decl Line</th>
+                                </tr>
+                            </thead>
+                            <tbody id="symbolsTableBody">
+                                <tr><td colspan="6" class="table-empty">Compile code to inspect resolved symbols and types</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Three-Address Code -->
+                <div id="tab-tac" class="tab-pane">
+                    <div class="tac-split-view">
+                        <div class="tac-column">
+                            <div class="column-header">
+                                <h3>Raw Intermediate Code (Quadruples)</h3>
+                                <span id="rawTacCount" class="badge">0 insts</span>
+                            </div>
+                            <pre id="rawTacOutput" class="code-block"></pre>
+                        </div>
+                        <div class="tac-column">
+                            <div class="column-header">
+                                <h3>Optimized Intermediate Code</h3>
+                                <span id="optTacCount" class="badge badge-success">0 insts</span>
+                            </div>
+                            <pre id="optTacOutput" class="code-block"></pre>
+                        </div>
+                    </div>
+                    <!-- Control Flow Graph Accordion -->
+                    <div class="cfg-accordion">
+                        <div class="accordion-header" id="cfgToggle">
+                            <span>🔀 Control Flow Graph (CFG)</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-body" id="cfgBody">
+                            <div id="cfgMermaidOutput" class="mermaid-target">CFG will appear here after compilation</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 5: Optimization Passes Timeline -->
+                <div id="tab-optimizations" class="tab-pane">
+                    <div class="pane-toolbar">
+                        <span class="pane-stats" id="optSummaryLabel">Multi-Pass Optimization Breakdown</span>
+                    </div>
+                    <div id="optStepsContainer" class="opt-timeline">
+                        <div class="empty-state">Compile code to inspect step-by-step optimization diffs</div>
+                    </div>
+                </div>
+
+                <!-- Tab 6: LLVM IR & Assembly -->
+                <div id="tab-codegen" class="tab-pane">
+                    <div class="pane-toolbar">
+                        <div class="codegen-toggles">
+                            <button id="btnShowLLVM" class="btn btn-sm btn-active">LLVM IR</button>
+                            <button id="btnShowAsm" class="btn btn-sm">x86-64 Assembly</button>
+                        </div>
+                        <button id="btnCopyCodegen" class="btn btn-sm btn-secondary">Copy Target Code</button>
+                    </div>
+                    <div id="llvmView" class="codegen-view">
+                        <pre id="llvmOutput" class="code-block llvm-code"></pre>
+                    </div>
+                    <div id="asmView" class="codegen-view hidden">
+                        <pre id="asmOutput" class="code-block asm-code"></pre>
+                    </div>
+                </div>
+
+                <!-- Tab 7: Execution Console -->
+                <div id="tab-console" class="tab-pane">
+                    <div class="console-metrics-bar">
+                        <div class="metric-card">
+                            <span class="metric-label">Status</span>
+                            <span id="execStatus" class="metric-value badge-success">Ready</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Step Count</span>
+                            <span id="execSteps" class="metric-value">0</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Compile Time</span>
+                            <span id="compileTime" class="metric-value">0.0 ms</span>
+                        </div>
+                    </div>
+
+                    <div class="console-section">
+                        <div class="console-header">
+                            <span>🖥️ Standard Output (stdout)</span>
+                            <button id="btnClearConsole" class="btn btn-xs btn-secondary">Clear</button>
+                        </div>
+                        <pre id="consoleOutput" class="terminal-output">Press "Run Program" to compile and execute CraftLang code in the Virtual Machine.</pre>
+                    </div>
+
+                    <div class="memory-section">
+                        <div class="console-header">
+                            <span>🧠 Virtual Machine Memory State (Final Variables)</span>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="memoryTable">
+                                <thead>
+                                    <tr>
+                                        <th>Variable Name</th>
+                                        <th>Value</th>
+                                        <th>Inferred Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="memoryTableBody">
+                                    <tr><td colspan="3" class="table-empty">No active runtime variables</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <span>The Craft of Compilers &bull; Educational Pipeline (Lexer &rarr; Parser &rarr; AST &rarr; Semantics &rarr; TAC &rarr; Optimizer &rarr; LLVM IR / Assembly &rarr; VM)</span>
+    </footer>
+
+    <!-- App Scripts -->
+    <script src="/static/js/editor.js"></script>
+    <script src="/static/js/visualizer.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
